@@ -7,7 +7,7 @@ export async function loadImage(file: File): Promise<HTMLImageElement> {
   return img;
 }
 
-export async function upscale(img: HTMLImageElement, scale: number): Promise<Blob> {
+export async function upscale(img: HTMLImageElement, scale: number, strength = 0.5): Promise<Blob> {
   let w = img.naturalWidth;
   let h = img.naturalHeight;
   let src: CanvasImageSource = img;
@@ -28,8 +28,10 @@ export async function upscale(img: HTMLImageElement, scale: number): Promise<Blo
     h = nh;
   }
   const canvas = src as HTMLCanvasElement;
-  const palette = extractPalette(img, 8);
-  crispEdges(canvas, palette);
+  if (strength > 0) {
+    const palette = extractPalette(img, 8);
+    crispEdges(canvas, palette, strength);
+  }
   return new Promise((r) => canvas.toBlob((b) => r(b!), "image/png"));
 }
 
@@ -87,9 +89,11 @@ function nearest(p: Col, pal: Col[]): [number, number] {
   return [a, b];
 }
 
-// Snap smooth upscaled pixels toward palette colors with a steep curve:
-// crisp edges, but keeps a thin anti-aliased transition.
-function crispEdges(canvas: HTMLCanvasElement, pal: Col[]) {
+// Snap smooth upscaled pixels toward palette colors with a curve whose
+// steepness follows `strength` (0..1): low = soft anti-aliased edges,
+// high = very crisp edges.
+function crispEdges(canvas: HTMLCanvasElement, pal: Col[], strength: number) {
+  const slope = 4 + strength * 18;
   const ctx = canvas.getContext("2d")!;
   const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const d = id.data;
@@ -105,8 +109,9 @@ function crispEdges(canvas: HTMLCanvasElement, pal: Col[]) {
     for (let q = 0; q < 4; q++) { const e = B[q]! - A[q]!; num += (p[q]! - A[q]!) * e; den += e * e; }
     let t = den ? num / den : 0;
     t = Math.min(1, Math.max(0, t));
-    const s = 1 / (1 + Math.exp(-(t - 0.5) * 14));
-    const tt = (s - 0.0009) / 0.9982;
+    const s = 1 / (1 + Math.exp(-(t - 0.5) * slope));
+    const s0 = 1 / (1 + Math.exp(slope / 2));
+    const tt = (s - s0) / (1 - 2 * s0);
     for (let q = 0; q < 4; q++) d[i + q] = A[q]! + (B[q]! - A[q]!) * tt;
   }
   ctx.putImageData(id, 0, 0);

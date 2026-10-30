@@ -22,6 +22,7 @@ function Index() {
   const [before, setBefore] = useState<string | null>(null);
   const [after, setAfter] = useState<string | null>(null);
   const [scale, setScale] = useState(2);
+  const [strength, setStrength] = useState(50);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
   const [pos, setPos] = useState(50);
@@ -43,7 +44,7 @@ function Index() {
       const img = await loadImage(file);
       if (img.naturalWidth * scale > 8000 || img.naturalHeight * scale > 8000)
         throw new Error("Gambar terlalu besar untuk skala ini. Coba 2x atau gambar lebih kecil.");
-      const blob = await upscale(img, scale);
+      const blob = await upscale(img, scale, strength / 100);
       setAfter(URL.createObjectURL(blob));
       setPos(50);
     } catch (e) {
@@ -100,6 +101,23 @@ function Index() {
             className="flex-1 rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40">
             {busy ? "Memproses…" : "Jernihkan Logo"}
           </button>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-border bg-card px-4 py-3">
+          <div className="flex items-center justify-between">
+            <label htmlFor="strength" className="text-sm font-medium text-foreground">Tingkat penajaman</label>
+            <span className="text-sm tabular-nums text-muted-foreground">{strength}%</span>
+          </div>
+          <input id="strength" type="range" min={0} max={100} value={strength}
+            onChange={(e) => { setStrength(+e.target.value); setAfter(null); }}
+            className="mt-2 w-full accent-primary" />
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+            <span>Halus</span>
+            <span>Tajam</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Naikkan untuk memperjelas detail logo kecil; turunkan jika tepi mulai tampak kasar.
+          </p>
         </div>
 
         {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
