@@ -43,8 +43,8 @@ function sharpen(canvas: HTMLCanvasElement, amount: number) {
       const i = (y * w + x) * 4;
       for (let c = 0; c < 3; c++) {
         const k = i + c;
-        const blur = (s[k - 4] + s[k + 4] + s[k - w * 4] + s[k + w * 4]) / 4;
-        o[k] = s[k] + amount * (s[k] - blur) * 2;
+        const blur = (s[k - 4]! + s[k + 4]! + s[k - w * 4]! + s[k + w * 4]!) / 4;
+        o[k] = s[k]! + amount * (s[k]! - blur) * 2;
       }
     }
   }
