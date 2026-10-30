@@ -25,19 +25,18 @@ let wasmPromise: Promise<Wasm> | null = null;
 // evaluate its glue with the sync fs load swapped for an async instantiate.
 function loadVTracer(): Promise<Wasm> {
   wasmPromise ??= (async () => {
-    const [{ default: glue }, { default: wasmUrl }] = await Promise.all([
-      import("@visioncortex/vtracer/pkg/vtracer_wasm.js?raw"),
-      import("@visioncortex/vtracer/pkg/vtracer_wasm_bg.wasm?url"),
-    ]);
+    const { default: glue } = await import("@visioncortex/vtracer/pkg/vtracer_wasm.js?raw");
+    // Binary lives in public/wasm so it never enters the server bundle.
+    const wasmUrl = "/wasm/vtracer_wasm_bg.wasm";
     const start = glue.indexOf("const wasmPath");
     if (start < 0) throw new Error("Library vektor tidak dikenali.");
     const src = glue.slice(0, start) +
       "let wasm; exports.__imports = __wbg_get_imports; exports.__init = (i) => { wasm = i.exports; wasm.__wbindgen_start(); };";
-    const mod: Record<string, any> = {};
+    const mod: { __imports?: () => WebAssembly.Imports; __init?: (i: WebAssembly.Instance) => void } = {};
     new Function("exports", "require", "module", src)(mod, () => ({}), { exports: mod });
     const bytes = await (await fetch(wasmUrl)).arrayBuffer();
-    const { instance } = await WebAssembly.instantiate(bytes, mod.__imports());
-    mod.__init(instance);
+    const { instance } = await WebAssembly.instantiate(bytes, mod.__imports!());
+    mod.__init!(instance);
     return mod as unknown as Wasm;
   })().catch((e) => { wasmPromise = null; throw e; });
   return wasmPromise;
