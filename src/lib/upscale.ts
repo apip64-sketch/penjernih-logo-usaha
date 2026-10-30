@@ -112,21 +112,3 @@ function crispEdges(canvas: HTMLCanvasElement, pal: Col[]) {
   ctx.putImageData(id, 0, 0);
 }
 
-function sharpen(canvas: HTMLCanvasElement, amount: number) {
-  const ctx = canvas.getContext("2d")!;
-  const { width: w, height: h } = canvas;
-  const id = ctx.getImageData(0, 0, w, h);
-  const s = id.data;
-  const o = new Uint8ClampedArray(s);
-  for (let y = 1; y < h - 1; y++) {
-    for (let x = 1; x < w - 1; x++) {
-      const i = (y * w + x) * 4;
-      for (let c = 0; c < 3; c++) {
-        const k = i + c;
-        const blur = (s[k - 4]! + s[k + 4]! + s[k - w * 4]! + s[k + w * 4]!) / 4;
-        o[k] = s[k]! + amount * (s[k]! - blur) * 2;
-      }
-    }
-  }
-  ctx.putImageData(new ImageData(o, w, h), 0, 0);
-}
