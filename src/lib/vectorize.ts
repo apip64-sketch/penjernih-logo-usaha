@@ -21,13 +21,13 @@ export function vtracerOptions(preset: VectorPreset, colors: VectorColors): VTra
 type Wasm = { vectorize_rgba(rgba: Uint8Array, w: number, h: number, o: object): string };
 let wasmPromise: Promise<Wasm> | null = null;
 
-// The npm package is a Node build that reads the .wasm via fs. In the browser we
+// The npm package is a Node build that reads its binary via fs. In the browser we
 // evaluate its glue with the sync fs load swapped for an async instantiate.
 function loadVTracer(): Promise<Wasm> {
   wasmPromise ??= (async () => {
     const { default: glue } = await import("@visioncortex/vtracer/pkg/vtracer_wasm.js?raw");
     // Binary lives in public/wasm so it never enters the server bundle.
-    const wasmUrl = "/wasm/vtracer_wasm_bg.wasm";
+    const wasmUrl = ["/wasm/vtracer_wasm_bg", "wasm"].join(".");
     const start = glue.indexOf("const wasmPath");
     if (start < 0) throw new Error("Library vektor tidak dikenali.");
     const src = glue.slice(0, start) +
