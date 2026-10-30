@@ -12,4 +12,8 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    // VTracer ships a Node build; we load its glue as ?raw and .wasm as ?url, so never pre-bundle it.
+    optimizeDeps: { exclude: ["@visioncortex/vtracer"] },
+  },
 });
