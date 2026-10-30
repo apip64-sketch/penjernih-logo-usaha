@@ -22,6 +22,7 @@ function Index() {
   const [before, setBefore] = useState<string | null>(null);
   const [after, setAfter] = useState<string | null>(null);
   const [scale, setScale] = useState(2);
+  const [strength, setStrength] = useState(50);
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
   const [pos, setPos] = useState(50);
