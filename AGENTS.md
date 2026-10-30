@@ -9,5 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep PNG upscaling and SVG tracing in separate browser-safe library modules; load the tracer dynamically inside the browser action so adding vector processing cannot change the upscale algorithm or evaluate the tracer during SSR.
+- Keep PNG upscaling and SVG tracing in separate browser-safe library modules; load the VTracer WASM dynamically inside the browser action (its npm build is Node-only, so the browser loader evaluates its glue via ?raw with an async-instantiated ?url wasm) so adding vector processing cannot change the upscale algorithm or evaluate the tracer during SSR.
 - Map vector controls through a pure, tested options function; preview generated SVG through a Blob image URL rather than inserting SVG markup into the document.

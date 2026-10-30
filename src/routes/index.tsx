@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { loadImage, upscale } from "@/lib/upscale";
-import { renderSvgPng, vectorize, VECTOR_COLORS, type VectorColors } from "@/lib/vectorize";
+import { renderSvgPng, vectorize, VECTOR_COLORS, type VectorColors, type VectorPreset } from "@/lib/vectorize";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
@@ -32,7 +32,7 @@ function Index() {
   const [err, setErr] = useState("");
   const [mode, setMode] = useState<"png" | "svg">("png");
   const [colors, setColors] = useState<VectorColors>(8);
-  const [smoothing, setSmoothing] = useState(50);
+  const [preset, setPreset] = useState<VectorPreset>("poster");
   const [svgUrl, setSvgUrl] = useState<string | null>(null);
 
   useEffect(() => () => { if (before) URL.revokeObjectURL(before); }, [before]);
@@ -57,7 +57,7 @@ function Index() {
       if (mode === "svg") {
         // Let the processing label paint before the synchronous tracing work.
         await new Promise((resolve) => setTimeout(resolve, 30));
-        const svg = await vectorize(file, colors, smoothing);
+        const svg = await vectorize(file, preset, colors);
         setSvgUrl(URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" })));
         return;
       }
@@ -129,7 +129,7 @@ function Index() {
         </div>
 
         <p className="mt-3 rounded-md bg-muted px-3 py-2 text-center text-sm text-muted-foreground">
-          {mode === "png" ? "💡 Cocok untuk logo sederhana. Untuk foto kompleks, hasil terbatas." : "Terbaik untuk logo datar/sablon. Untuk foto kompleks, pakai mode Perbesar."}
+          {mode === "png" ? "💡 Cocok untuk logo sederhana. Untuk foto kompleks, hasil terbatas." : "Terbaik untuk logo datar/sablon — zoom tak terbatas. Untuk foto, pakai mode Perbesar."}
         </p>
 
         <div className="mt-6 flex rounded-lg border border-border bg-card p-1" role="group" aria-label="Mode pengolahan">
@@ -144,6 +144,17 @@ function Index() {
         {mode === "svg" && (
           <div className="mt-4 space-y-4">
             <fieldset disabled={busy}>
+              <legend className="mb-2 text-sm font-medium">Jenis logo</legend>
+              <div className="flex rounded-lg border border-border bg-card p-1">
+                {([["poster", "Berwarna"], ["bw", "Hitam-putih"]] as const).map(([value, label]) => (
+                  <Button key={value} variant={preset === value ? "default" : "ghost"} disabled={busy}
+                    aria-pressed={preset === value} className="flex-1"
+                    onClick={() => { setPreset(value); setSvgUrl(null); }}>{label}</Button>
+                ))}
+              </div>
+            </fieldset>
+            {preset === "poster" && (
+            <fieldset disabled={busy}>
               <legend className="mb-2 text-sm font-medium">Jumlah warna</legend>
               <div className="flex rounded-lg border border-border bg-card p-1">
                 {VECTOR_COLORS.map((value) => (
@@ -153,15 +164,7 @@ function Index() {
                 ))}
               </div>
             </fieldset>
-            <div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="smoothing" className="text-sm font-medium">Penghalusan (smoothing)</label>
-                <span className="text-sm tabular-nums text-muted-foreground">{smoothing}%</span>
-              </div>
-              <input id="smoothing" type="range" min={0} max={100} value={smoothing} disabled={busy}
-                onChange={(e) => { setSmoothing(+e.target.value); setSvgUrl(null); }} className="mt-2 w-full accent-primary" />
-              <div className="flex justify-between text-xs text-muted-foreground"><span>Detail</span><span>Halus</span></div>
-            </div>
+            )}
           </div>
         )}
 
